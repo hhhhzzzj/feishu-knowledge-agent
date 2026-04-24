@@ -13,6 +13,7 @@ env/
 ENV/
 .env
 .env.*
+!.env.example
 .idea/
 .vscode/
 .DS_Store
@@ -21,5 +22,10 @@ build/
 dist/
 *.log
 chroma/
+data/raw_docs/
 *.sqlite3
 *.db
+doc/context.md
+doc/project-plan-v0.md
+help/progress.md
+help/problem.md
