@@ -19,6 +19,7 @@ class AnswerResult:
     question: str
     answer: str
     model: str | None
+    retrieval_mode: str
     document_count: int
     chunk_count: int
     hits: list[RetrievalHit]
@@ -37,6 +38,8 @@ class AnswerService:
         top_k: int = 5,
         chunk_size: int = 800,
         chunk_overlap: int = 120,
+        retrieval_mode: str = "bm25",
+        vector_top_k: int | None = None,
         temperature: float = 0.2,
     ) -> AnswerResult:
         retrieval_result = self.retrieval_service.retrieve(
@@ -45,6 +48,8 @@ class AnswerService:
             top_k=top_k,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            retrieval_mode=retrieval_mode,
+            vector_top_k=vector_top_k,
         )
 
         if not retrieval_result.hits:
@@ -52,6 +57,7 @@ class AnswerService:
                 question=question,
                 answer="未在本地知识库中检索到相关内容，暂时无法基于文档给出可靠回答。",
                 model=None,
+                retrieval_mode=retrieval_result.retrieval_mode,
                 document_count=retrieval_result.document_count,
                 chunk_count=retrieval_result.chunk_count,
                 hits=[],
@@ -66,6 +72,7 @@ class AnswerService:
             question=question,
             answer=completion.text,
             model=completion.model,
+            retrieval_mode=retrieval_result.retrieval_mode,
             document_count=retrieval_result.document_count,
             chunk_count=retrieval_result.chunk_count,
             hits=retrieval_result.hits,
