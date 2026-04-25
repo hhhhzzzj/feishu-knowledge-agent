@@ -31,25 +31,43 @@ class DocumentIngestionService:
 
     def ingest_document(self, *, doc: str, subdirectory: str = "lark_docs") -> StoredDocumentArtifact:
         fetched = self.fetch_document(doc=doc)
-        target_dir = self.raw_docs_dir / subdirectory / self._safe_name(fetched.doc_id or fetched.title)
-        target_dir.mkdir(parents=True, exist_ok=True)
+        return self.store_document(document=fetched, subdirectory=subdirectory)
 
-        markdown_path = target_dir / "content.md"
-        metadata_path = target_dir / "metadata.json"
+    def store_document(
+        self,
+        *,
+        document: FetchedLarkDocument,
+        subdirectory: str = "lark_docs",
+        extra_metadata: dict | None = None,
+    ) -> StoredDocumentArtifact:
+        markdown_path, metadata_path = self.resolve_storage_paths(
+            doc_id=document.doc_id,
+            title=document.title,
+            subdirectory=subdirectory,
+        )
+        markdown_path.parent.mkdir(parents=True, exist_ok=True)
 
-        markdown_path.write_text(fetched.markdown, encoding="utf-8")
+        metadata = self._load_existing_metadata(metadata_path)
+        metadata.update(extra_metadata or {})
+        metadata.update(self._build_metadata(document))
+
+        markdown_path.write_text(document.markdown, encoding="utf-8")
         metadata_path.write_text(
-            json.dumps(self._build_metadata(fetched), ensure_ascii=False, indent=2),
+            json.dumps(metadata, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
         return StoredDocumentArtifact(
-            doc_id=fetched.doc_id,
-            title=fetched.title,
-            source_url=fetched.source_url,
+            doc_id=document.doc_id,
+            title=document.title,
+            source_url=document.source_url,
             markdown_path=markdown_path,
             metadata_path=metadata_path,
         )
+
+    def resolve_storage_paths(self, *, doc_id: str, title: str, subdirectory: str = "lark_docs") -> tuple[Path, Path]:
+        target_dir = self.raw_docs_dir / subdirectory / self._safe_name(doc_id or title)
+        return target_dir / "content.md", target_dir / "metadata.json"
 
     @staticmethod
     def _build_metadata(document: FetchedLarkDocument) -> dict:
@@ -64,6 +82,15 @@ class DocumentIngestionService:
             "message": document.message,
             "fetched_at": datetime.now(timezone.utc).isoformat(),
         }
+
+    @staticmethod
+    def _load_existing_metadata(metadata_path: Path) -> dict:
+        if not metadata_path.exists():
+            return {}
+        try:
+            return json.loads(metadata_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
 
     @staticmethod
     def _safe_name(value: str) -> str:
