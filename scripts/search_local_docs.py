@@ -9,9 +9,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from backend.config import RAW_DOCS_DIR
-from backend.ingestion.chunker import MarkdownChunker
-from backend.retrieval import BM25Index, LocalDocumentCorpus
+from backend.clients import EmbeddingConfigurationError, EmbeddingInvocationError
+from backend.config import CHROMA_DIR, RAW_DOCS_DIR
+from backend.services import EmptyCorpusError, InvalidRetrievalRequestError, LocalRetrievalService
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,24 +21,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--chunk-size", type=int, default=800)
     parser.add_argument("--chunk-overlap", type=int, default=120)
+    parser.add_argument("--retrieval-mode", default="bm25", choices=["bm25", "vector", "hybrid"])
+    parser.add_argument("--vector-top-k", type=int, default=None)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    corpus = LocalDocumentCorpus(RAW_DOCS_DIR)
-    documents = corpus.load_documents(subdirectory=args.subdirectory)
-    if not documents:
-        raise SystemExit("No local documents found. Please ingest documents first.")
-
-    chunker = MarkdownChunker(chunk_size=args.chunk_size, overlap_size=args.chunk_overlap)
-    index = BM25Index.from_documents(documents, chunker=chunker)
-    hits = index.search(args.query, top_k=args.top_k)
+    service = LocalRetrievalService(raw_docs_dir=RAW_DOCS_DIR, chroma_dir=CHROMA_DIR)
+    try:
+        result = service.retrieve(
+            query=args.query,
+            subdirectory=args.subdirectory,
+            top_k=args.top_k,
+            chunk_size=args.chunk_size,
+            chunk_overlap=args.chunk_overlap,
+            retrieval_mode=args.retrieval_mode,
+            vector_top_k=args.vector_top_k,
+        )
+    except (EmptyCorpusError, InvalidRetrievalRequestError, EmbeddingConfigurationError, EmbeddingInvocationError) as exc:
+        raise SystemExit(str(exc)) from exc
 
     output = {
-        "query": args.query,
-        "document_count": len(documents),
-        "chunk_count": len(index.chunks),
+        "query": result.query,
+        "retrieval_mode": result.retrieval_mode,
+        "document_count": result.document_count,
+        "chunk_count": result.chunk_count,
         "hits": [
             {
                 "score": hit.score,
@@ -51,7 +59,7 @@ def main() -> None:
                 "end_offset": hit.chunk.end_offset,
                 "text_preview": hit.chunk.text_preview,
             }
-            for hit in hits
+            for hit in result.hits
         ],
     }
     print(json.dumps(output, ensure_ascii=False, indent=2))

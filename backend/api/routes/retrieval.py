@@ -1,14 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from backend.api.schemas.retrieval import RetrievalHitResponse, RetrievalRequest, RetrievalResponse
-from backend.config import RAW_DOCS_DIR
+from backend.clients import EmbeddingConfigurationError, EmbeddingInvocationError
+from backend.config import CHROMA_DIR, RAW_DOCS_DIR
 from backend.services import EmptyCorpusError, InvalidRetrievalRequestError, LocalRetrievalService
 
 router = APIRouter(tags=["retrieval"])
 
 
 def get_retrieval_service() -> LocalRetrievalService:
-    return LocalRetrievalService(raw_docs_dir=RAW_DOCS_DIR)
+    return LocalRetrievalService(raw_docs_dir=RAW_DOCS_DIR, chroma_dir=CHROMA_DIR)
 
 
 @router.post("/retrieve", response_model=RetrievalResponse)
@@ -23,14 +24,21 @@ def retrieve_documents(
             top_k=request.top_k,
             chunk_size=request.chunk_size,
             chunk_overlap=request.chunk_overlap,
+            retrieval_mode=request.retrieval_mode,
+            vector_top_k=request.vector_top_k,
         )
     except EmptyCorpusError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except InvalidRetrievalRequestError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except EmbeddingConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except EmbeddingInvocationError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     return RetrievalResponse(
         query=result.query,
+        retrieval_mode=result.retrieval_mode,
         document_count=result.document_count,
         chunk_count=result.chunk_count,
         hits=[

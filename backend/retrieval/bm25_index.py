@@ -20,6 +20,10 @@ class BM25Index:
         chunks: list[DocumentChunk] = []
         for document in documents:
             chunks.extend(chunker.split_document(document))
+        return cls.from_chunks(chunks)
+
+    @classmethod
+    def from_chunks(cls, chunks: list[DocumentChunk]) -> "BM25Index":
         tokenized_chunks = [tokenize_text(chunk.text) for chunk in chunks]
         bm25 = BM25Okapi(tokenized_chunks) if tokenized_chunks else BM25Okapi([[]])
         return cls(chunks=chunks, _tokenized_chunks=tokenized_chunks, _bm25=bm25)
