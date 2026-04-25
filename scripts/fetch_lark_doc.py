@@ -9,7 +9,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from backend.clients import LarkCLIClient
-from backend.config import LARK_CLI_IDENTITY, LARK_CLI_PATH, RAW_DOCS_DIR
+from backend.config import LARK_CLI_PATH, LARK_DOC_IDENTITY, RAW_DOCS_DIR
 from backend.ingestion import DocumentIngestionService
 
 
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    client = LarkCLIClient(cli_path=LARK_CLI_PATH, identity=LARK_CLI_IDENTITY)
+    client = LarkCLIClient(cli_path=LARK_CLI_PATH, identity=LARK_DOC_IDENTITY)
     service = DocumentIngestionService(client=client, raw_docs_dir=RAW_DOCS_DIR)
     artifact = service.ingest_document(doc=args.doc, subdirectory=args.subdirectory)
     print(

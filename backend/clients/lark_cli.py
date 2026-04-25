@@ -17,7 +17,7 @@ class LarkCLIError(RuntimeError):
 @dataclass(slots=True)
 class LarkCLIClient:
     cli_path: str
-    identity: str = "user"
+    identity: str
     timeout_seconds: int = 60
 
     def __post_init__(self) -> None:
