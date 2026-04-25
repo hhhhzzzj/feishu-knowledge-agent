@@ -1,0 +1,39 @@
+{
+  "doc_id": "demo-rule-targets",
+  "title": "发布流程更新示例",
+  "source_url": "https://example.feishu.cn/docx/demo-rule-targets",
+  "owner_team": "platform",
+  "fetched_at": "2026-04-25T00:00:00+00:00",
+  "distribution_rules": [
+    {
+      "match": {
+        "title_contains": [
+          "发布",
+          "上线"
+        ],
+        "metadata_equals": {
+          "owner_team": "platform"
+        }
+      },
+      "targets": [
+        {
+          "target_type": "chat",
+          "target_id": "oc_demo_release_chat",
+          "target_name": "发布通知群"
+        }
+      ]
+    },
+    {
+      "match": {
+        "change_summary_contains": "回滚"
+      },
+      "targets": [
+        {
+          "target_type": "user",
+          "target_id": "ou_demo_sre_owner",
+          "target_name": "SRE 值班负责人"
+        }
+      ]
+    }
+  ]
+}

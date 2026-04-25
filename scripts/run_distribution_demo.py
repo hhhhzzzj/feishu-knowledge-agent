@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import time
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -14,6 +15,7 @@ from backend.config import (
     DISTRIBUTION_DEFAULT_CHAT_IDS,
     DISTRIBUTION_DEFAULT_USER_IDS,
     DISTRIBUTION_DOCS,
+    DISTRIBUTION_INTERVAL_MINUTES,
     DISTRIBUTION_SUBDIRECTORY,
     LARK_DOC_IDENTITY,
     LARK_MESSAGE_IDENTITY,
@@ -34,6 +36,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subdirectory", default=DISTRIBUTION_SUBDIRECTORY)
     parser.add_argument("--chat-id", action="append", default=[])
     parser.add_argument("--user-id", action="append", default=[])
+    parser.add_argument("--watch", action="store_true", help="Keep polling documents on an interval")
+    parser.add_argument("--interval-minutes", type=int, default=DISTRIBUTION_INTERVAL_MINUTES)
+    parser.add_argument("--max-runs", type=int, default=None)
     parser.add_argument("--send", action="store_true", help="Actually send Lark messages for changed documents")
     return parser.parse_args()
 
@@ -60,8 +65,59 @@ def main() -> None:
     )
     dispatcher = LarkMessageDispatcher(client=LarkCLIClient(cli_path=LARK_CLI_PATH, identity=LARK_MESSAGE_IDENTITY))
 
+    if args.watch and args.interval_minutes < 1:
+        raise SystemExit("--interval-minutes must be >= 1 when --watch is enabled.")
+    if args.max_runs is not None and args.max_runs < 1:
+        raise SystemExit("--max-runs must be >= 1.")
+
+    if args.watch:
+        run_count = 0
+        try:
+            while True:
+                run_count += 1
+                output = _execute_once(
+                    watcher=watcher,
+                    dispatcher=dispatcher,
+                    docs=docs,
+                    subdirectory=args.subdirectory,
+                    default_targets=default_targets,
+                    send_enabled=args.send,
+                )
+                output["watch"] = {
+                    "enabled": True,
+                    "run": run_count,
+                    "interval_minutes": args.interval_minutes,
+                }
+                print(json.dumps(output, ensure_ascii=False, indent=2))
+                if args.max_runs is not None and run_count >= args.max_runs:
+                    break
+                time.sleep(args.interval_minutes * 60)
+        except KeyboardInterrupt:
+            raise SystemExit("Watcher stopped.") from None
+        return
+
+    output = _execute_once(
+        watcher=watcher,
+        dispatcher=dispatcher,
+        docs=docs,
+        subdirectory=args.subdirectory,
+        default_targets=default_targets,
+        send_enabled=args.send,
+    )
+    print(json.dumps(output, ensure_ascii=False, indent=2))
+
+
+def _execute_once(
+    *,
+    watcher: DistributionWatcher,
+    dispatcher: LarkMessageDispatcher,
+    docs: list[str],
+    subdirectory: str,
+    default_targets: list[DistributionTarget],
+    send_enabled: bool,
+) -> dict:
     try:
-        result = watcher.check_documents(docs=docs, subdirectory=args.subdirectory)
+        result = watcher.check_documents(docs=docs, subdirectory=subdirectory)
     except LarkCLIError as exc:
         raise SystemExit(str(exc)) from exc
 
@@ -84,11 +140,11 @@ def main() -> None:
             "message_text": event.message_text,
             "dry_run_commands": dispatcher.dry_run_commands(targets=event.targets, message_text=event.message_text),
         }
-        if args.send and event.targets:
+        if send_enabled and event.targets:
             event_output["send_results"] = dispatcher.send_text(targets=event.targets, message_text=event.message_text)
         output_events.append(event_output)
 
-    output = {
+    return {
         "checked": result.checked,
         "changed": result.changed,
         "doc_identity": LARK_DOC_IDENTITY,
@@ -102,9 +158,8 @@ def main() -> None:
             }
             for target in default_targets
         ],
-        "send_enabled": args.send,
+        "send_enabled": send_enabled,
     }
-    print(json.dumps(output, ensure_ascii=False, indent=2))
 
 
 def _build_targets(*, chat_ids: list[str], user_ids: list[str]) -> list[DistributionTarget]:

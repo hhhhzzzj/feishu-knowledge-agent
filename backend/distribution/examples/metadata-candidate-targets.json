@@ -1,0 +1,24 @@
+{
+  "doc_id": "demo-candidate-targets",
+  "title": "权限变更公告示例",
+  "source_url": "https://example.feishu.cn/docx/demo-candidate-targets",
+  "category": "security",
+  "fetched_at": "2026-04-25T00:00:00+00:00",
+  "candidate_targets": [
+    {
+      "target_type": "chat",
+      "target_id": "oc_demo_security_chat",
+      "target_name": "安全响应群"
+    },
+    {
+      "target_type": "chat",
+      "target_id": "oc_demo_admin_chat",
+      "target_name": "管理员群"
+    },
+    {
+      "target_type": "user",
+      "target_id": "ou_demo_compliance_owner",
+      "target_name": "合规负责人"
+    }
+  ]
+}

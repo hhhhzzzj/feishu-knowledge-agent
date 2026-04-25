@@ -1,0 +1,18 @@
+{
+  "doc_id": "demo-explicit-targets",
+  "title": "差旅制度更新示例",
+  "source_url": "https://example.feishu.cn/docx/demo-explicit-targets",
+  "fetched_at": "2026-04-25T00:00:00+00:00",
+  "distribution_targets": [
+    {
+      "target_type": "chat",
+      "target_id": "oc_demo_finance_chat",
+      "target_name": "财务群"
+    },
+    {
+      "target_type": "user",
+      "target_id": "ou_demo_owner",
+      "target_name": "制度负责人"
+    }
+  ]
+}
