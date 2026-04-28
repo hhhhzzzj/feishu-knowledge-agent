@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class FeishuEventRequest(BaseModel):
@@ -9,7 +9,6 @@ class FeishuEventRequest(BaseModel):
     challenge: str | None = None
     token: str | None = None
     type: str | None = None
-    schema_: str | None = Field(default=None, alias="schema")
     header: dict[str, Any] | None = None
     event: dict[str, Any] | None = None
 
@@ -20,3 +19,9 @@ class FeishuEventResponse(BaseModel):
     msg: str = "ok"
     event_type: str | None = None
     tenant_key: str | None = None
+    handled: bool = False
+    replied: bool = False
+    skipped_reason: str | None = None
+    message_id: str | None = None
+    chat_id: str | None = None
+    question: str | None = None

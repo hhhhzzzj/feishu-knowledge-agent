@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 from dataclasses import dataclass
+from typing import Any
 
 from backend.models.lark_docs import FetchedLarkDocument, LarkDocSearchPage
 
@@ -72,6 +73,63 @@ class LarkCLIClient:
             command.extend(["--limit", str(limit)])
         payload = self._run_json_command(command)
         return FetchedLarkDocument.from_dict(payload, source_url=doc)
+
+    def build_send_text_command(
+        self,
+        *,
+        text: str,
+        chat_id: str | None = None,
+        user_id: str | None = None,
+        idempotency_key: str | None = None,
+        dry_run: bool = False,
+    ) -> list[str]:
+        command = [self.cli_path, "im", "+messages-send", "--as", self.identity]
+        if chat_id:
+            command.extend(["--chat-id", chat_id])
+        elif user_id:
+            command.extend(["--user-id", user_id])
+        else:
+            raise LarkCLIError("Either chat_id or user_id is required to send a message")
+        command.extend(["--text", text])
+        if idempotency_key:
+            command.extend(["--idempotency-key", idempotency_key])
+        if dry_run:
+            command.append("--dry-run")
+        return command
+
+    def send_text_to_chat(
+        self,
+        *,
+        chat_id: str,
+        text: str,
+        idempotency_key: str | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        return self._run_json_command(
+            self.build_send_text_command(
+                chat_id=chat_id,
+                text=text,
+                idempotency_key=idempotency_key,
+                dry_run=dry_run,
+            )
+        )
+
+    def send_text_to_user(
+        self,
+        *,
+        user_id: str,
+        text: str,
+        idempotency_key: str | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        return self._run_json_command(
+            self.build_send_text_command(
+                user_id=user_id,
+                text=text,
+                idempotency_key=idempotency_key,
+                dry_run=dry_run,
+            )
+        )
 
     def _run_json_command(self, command: list[str]) -> dict:
         try:
