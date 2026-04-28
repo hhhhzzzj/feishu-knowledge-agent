@@ -1,0 +1,72 @@
+[
+  {
+    "id": "Q001",
+    "category": "exact_match",
+    "question": "项目目标需要满足哪些原则？",
+    "expected_keywords": ["SMART", "具体", "可以衡量"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q002",
+    "category": "exact_match",
+    "question": "项目计划及复盘文档里有项目复盘部分吗？",
+    "expected_keywords": ["项目复盘"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q003",
+    "category": "exact_match",
+    "question": "当前项目路线图里阶段 2 的目标是什么？",
+    "expected_keywords": ["问答闭环", "真实大模型"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q004",
+    "category": "semantic_expansion",
+    "question": "这个项目想达成的核心结果是什么？",
+    "expected_keywords": ["项目目标", "SMART"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q005",
+    "category": "semantic_expansion",
+    "question": "文档里有没有讲这个系统分几个阶段推进？",
+    "expected_keywords": ["阶段", "路线图"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q006",
+    "category": "semantic_expansion",
+    "question": "如果要看项目回顾，应该关注哪一部分？",
+    "expected_keywords": ["项目复盘"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q007",
+    "category": "synonym",
+    "question": "这个项目的终极 KPI 是什么？",
+    "expected_keywords": ["项目目标", "SMART"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q008",
+    "category": "synonym",
+    "question": "这个项目后面怎么分期往前推？",
+    "expected_keywords": ["阶段", "路线图"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q009",
+    "category": "synonym",
+    "question": "要做总结复盘的话，文档里对应哪块内容？",
+    "expected_keywords": ["项目复盘"],
+    "expected_route": ""
+  },
+  {
+    "id": "Q010",
+    "category": "synonym",
+    "question": "这个项目的关键目标要求有哪些衡量标准？",
+    "expected_keywords": ["SMART", "可以衡量", "可以达到"],
+    "expected_route": ""
+  }
+]
